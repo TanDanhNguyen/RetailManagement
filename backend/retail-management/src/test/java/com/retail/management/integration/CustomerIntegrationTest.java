@@ -1,6 +1,7 @@
 
 package com.retail.management.integration;
 
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import tools.jackson.databind.ObjectMapper;
 import com.retail.management.dto.CustomerRequest;
 import com.retail.management.entity.Customer;
@@ -12,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -30,6 +31,11 @@ class CustomerIntegrationTest {
     @Autowired
     private CustomerRepository customerRepository;
 
+    private static final String TEST_USER = "test-user";
+
+    private static final RequestPostProcessor authenticatedUser =
+            user(TEST_USER).roles("STAFF");
+
     private CustomerRequest createRequest() {
         CustomerRequest request = new CustomerRequest();
         request.setFullName("John Smith");
@@ -45,6 +51,7 @@ class CustomerIntegrationTest {
         CustomerRequest request = createRequest();
 
         mockMvc.perform(post("/api/customers")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -62,7 +69,7 @@ class CustomerIntegrationTest {
 
         Customer savedCustomer = customerRepository.saveAndFlush(customer);
 
-        mockMvc.perform(get("/api/customers"))
+        mockMvc.perform(get("/api/customers").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id == " + savedCustomer.getId()
                         + ")].fullName").value(
@@ -78,7 +85,7 @@ class CustomerIntegrationTest {
 
         Customer savedCustomer = customerRepository.saveAndFlush(customer);
 
-        mockMvc.perform(get("/api/customers/{id}", savedCustomer.getId()))
+        mockMvc.perform(get("/api/customers/{id}", savedCustomer.getId()).with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(savedCustomer.getId()))
                 .andExpect(jsonPath("$.fullName").value("John Smith"));
@@ -97,6 +104,7 @@ class CustomerIntegrationTest {
         request.setEmail("john.updated@gmail.com");
 
         mockMvc.perform(put("/api/customers/{id}", savedCustomer.getId())
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -113,7 +121,7 @@ class CustomerIntegrationTest {
 
         Customer savedCustomer = customerRepository.saveAndFlush(customer);
 
-        mockMvc.perform(delete("/api/customers/{id}", savedCustomer.getId()))
+        mockMvc.perform(delete("/api/customers/{id}", savedCustomer.getId()).with(authenticatedUser))
                 .andExpect(status().isNoContent());
 
         org.junit.jupiter.api.Assertions.assertFalse(
@@ -132,6 +140,7 @@ class CustomerIntegrationTest {
         CustomerRequest request = createRequest();
 
         mockMvc.perform(post("/api/customers")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -139,7 +148,7 @@ class CustomerIntegrationTest {
 
     @Test
     void getCustomerById_ShouldReturn404_WhenCustomerNotFound() throws Exception {
-        mockMvc.perform(get("/api/customers/{id}", 999999L))
+        mockMvc.perform(get("/api/customers/{id}", 999999L).with(authenticatedUser))
                 .andExpect(status().isNotFound());
     }
 

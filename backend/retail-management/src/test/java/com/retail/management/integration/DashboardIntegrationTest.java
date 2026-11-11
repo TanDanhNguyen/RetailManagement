@@ -1,6 +1,7 @@
 
 package com.retail.management.integration;
 
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import tools.jackson.databind.ObjectMapper;
 import com.retail.management.dto.InventoryRequest;
 import com.retail.management.entity.Order;
@@ -24,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -48,6 +50,11 @@ class DashboardIntegrationTest {
     private DailySalesReportRepository dailySalesReportRepository;
 
     private Product product;
+
+    private static final String TEST_USER = "test-user";
+
+    private static final RequestPostProcessor authenticatedUser =
+            user(TEST_USER).roles("STAFF");
 
     @BeforeEach
     void setUp() {
@@ -93,7 +100,7 @@ class DashboardIntegrationTest {
                 LocalDateTime.now()
         );
 
-        mockMvc.perform(get("/api/dashboard/overview"))
+        mockMvc.perform(get("/api/dashboard/overview").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalProducts").isNumber())
                 .andExpect(jsonPath("$.totalCustomers").isNumber())
@@ -131,11 +138,12 @@ class DashboardIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-in")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/dashboard/inventory-summary"))
+        mockMvc.perform(get("/api/dashboard/inventory-summary").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalTransactions").isNumber())
                 .andExpect(jsonPath("$.stockInTransactions").isNumber())
@@ -149,6 +157,7 @@ class DashboardIntegrationTest {
             throws Exception {
 
         mockMvc.perform(get("/api/dashboard/low-stock")
+                        .with(authenticatedUser)
                         .param("threshold", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(
@@ -161,6 +170,7 @@ class DashboardIntegrationTest {
             throws Exception {
 
         mockMvc.perform(get("/api/dashboard/low-stock")
+                        .with(authenticatedUser)
                         .param("threshold", "-1"))
                 .andExpect(status().isBadRequest());
     }
@@ -182,7 +192,7 @@ class DashboardIntegrationTest {
                 reportDate.atTime(11, 0)
         );
 
-        mockMvc.perform(post("/api/reports/daily/{date}", reportDate))
+        mockMvc.perform(post("/api/reports/daily/{date}", reportDate).with(authenticatedUser))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.reportDate")
                         .value(reportDate.toString()))
@@ -210,10 +220,10 @@ class DashboardIntegrationTest {
                 reportDate.atTime(10, 0)
         );
 
-        mockMvc.perform(post("/api/reports/daily/{date}", reportDate))
+        mockMvc.perform(post("/api/reports/daily/{date}", reportDate).with(authenticatedUser))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/reports/daily/{date}", reportDate))
+        mockMvc.perform(get("/api/reports/daily/{date}", reportDate).with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.reportDate")
                         .value(reportDate.toString()))
@@ -226,7 +236,7 @@ class DashboardIntegrationTest {
 
         LocalDate reportDate = LocalDate.of(2020, 1, 1);
 
-        mockMvc.perform(get("/api/reports/daily/{date}", reportDate))
+        mockMvc.perform(get("/api/reports/daily/{date}", reportDate).with(authenticatedUser))
                 .andExpect(status().isNotFound());
     }
 
@@ -241,10 +251,10 @@ class DashboardIntegrationTest {
                 reportDate.atTime(10, 0)
         );
 
-        mockMvc.perform(post("/api/reports/daily/{date}", reportDate))
+        mockMvc.perform(post("/api/reports/daily/{date}", reportDate).with(authenticatedUser))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/reports/daily"))
+        mockMvc.perform(get("/api/reports/daily").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
