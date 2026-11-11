@@ -119,7 +119,7 @@ class DashboardIntegrationTest {
                 LocalDateTime.now()
         );
 
-        mockMvc.perform(get("/api/dashboard/order-statistics"))
+        mockMvc.perform(get("/api/dashboard/order-statistics").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalOrders").isNumber())
                 .andExpect(jsonPath("$.ordersByStatus").exists())
