@@ -1,6 +1,7 @@
 
 package com.retail.management.integration;
 
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import tools.jackson.databind.ObjectMapper;
 import com.retail.management.dto.InventoryAdjustmentRequest;
 import com.retail.management.dto.InventoryRequest;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -48,6 +50,11 @@ class InventoryIntegrationTest {
     private Product product;
     private Supplier supplier;
 
+    private static final String TEST_USER = "test-user";
+
+    private static final RequestPostProcessor authenticatedUser =
+            user(TEST_USER).roles("STAFF");
+
     @BeforeEach
     void setUp() {
         product = new Product();
@@ -72,6 +79,7 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-in")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -95,6 +103,7 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-out")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -117,6 +126,7 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-out")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -141,6 +151,7 @@ class InventoryIntegrationTest {
                 );
 
         mockMvc.perform(post("/api/inventory/adjustment")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -164,10 +175,11 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-in")
+                .with(authenticatedUser)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
-        mockMvc.perform(get("/api/inventory/transactions"))
+        mockMvc.perform(get("/api/inventory/transactions").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].productId")
                         .value(product.getId()));
@@ -180,13 +192,14 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-in")
+                .with(authenticatedUser)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)));
 
         mockMvc.perform(get(
                         "/api/inventory/products/{productId}/transactions",
                         product.getId()
-                ))
+                ).with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].type").value("STOCK_IN"));
@@ -199,6 +212,7 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-in")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
@@ -211,6 +225,7 @@ class InventoryIntegrationTest {
         );
 
         mockMvc.perform(post("/api/inventory/stock-in")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

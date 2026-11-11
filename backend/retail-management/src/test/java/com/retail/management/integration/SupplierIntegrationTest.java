@@ -1,6 +1,7 @@
 
 package com.retail.management.integration;
 
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import tools.jackson.databind.ObjectMapper;
 import com.retail.management.dto.SupplierRequest;
 import com.retail.management.entity.Supplier;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -30,6 +32,11 @@ class SupplierIntegrationTest {
 
     @Autowired
     private SupplierRepository supplierRepository;
+
+    private static final String TEST_USER = "test-user";
+
+    private static final RequestPostProcessor authenticatedUser =
+            user(TEST_USER).roles("STAFF");
 
     private SupplierRequest createRequest() {
         SupplierRequest request = new SupplierRequest();
@@ -49,6 +56,7 @@ class SupplierIntegrationTest {
         SupplierRequest request = createRequest();
 
         mockMvc.perform(post("/api/suppliers")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -68,7 +76,7 @@ class SupplierIntegrationTest {
         Supplier savedSupplier =
                 supplierRepository.saveAndFlush(supplier);
 
-        mockMvc.perform(get("/api/suppliers"))
+        mockMvc.perform(get("/api/suppliers").with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath(
                         "$[?(@.id == " + savedSupplier.getId()
@@ -89,7 +97,7 @@ class SupplierIntegrationTest {
 
         mockMvc.perform(get(
                         "/api/suppliers/{id}",
-                        savedSupplier.getId()))
+                        savedSupplier.getId()).with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id")
                         .value(savedSupplier.getId()))
@@ -116,7 +124,7 @@ class SupplierIntegrationTest {
                         "/api/suppliers/{id}",
                         savedSupplier.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(request)).with(authenticatedUser))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.supplierName")
                         .value("ABC Updated"))
@@ -137,7 +145,7 @@ class SupplierIntegrationTest {
 
         mockMvc.perform(delete(
                         "/api/suppliers/{id}",
-                        savedSupplier.getId()))
+                        savedSupplier.getId()).with(authenticatedUser))
                 .andExpect(status().isNoContent());
 
         assertFalse(
@@ -159,6 +167,7 @@ class SupplierIntegrationTest {
         SupplierRequest request = createRequest();
 
         mockMvc.perform(post("/api/suppliers")
+                        .with(authenticatedUser)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
@@ -168,7 +177,7 @@ class SupplierIntegrationTest {
     void getSupplierById_ShouldReturn404_WhenNotFound()
             throws Exception {
 
-        mockMvc.perform(get("/api/suppliers/{id}", 999999L))
+        mockMvc.perform(get("/api/suppliers/{id}", 999999L).with(authenticatedUser))
                 .andExpect(status().isNotFound());
     }
 }
