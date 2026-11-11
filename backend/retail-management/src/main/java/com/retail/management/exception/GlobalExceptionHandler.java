@@ -110,6 +110,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(DuplicateSupplierException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateSupplier(
+            DuplicateSupplierException ex) {
+
+        return buildErrorResponse(
+                409,
+                "Conflict",
+                ex.getMessage()
+        );
+    }
+
     private ResponseEntity<?> buildError(
             HttpStatus status,
             String message,
