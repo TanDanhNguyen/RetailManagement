@@ -82,10 +82,10 @@ public class GlobalExceptionHandler {
             InvalidOrderStateException ex) {
 
         return buildErrorResponse(
-                409,
-                "Bad Request",
+                404,
+                "Not found",
                 ex.getMessage()
-        );
+                );
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
@@ -129,6 +129,29 @@ public class GlobalExceptionHandler {
                 409,
                 "Conflict",
                 ex.getMessage()
+        );
+    }
+
+
+    @ExceptionHandler(ReportNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleReportNotFound(
+            ReportNotFoundException ex
+    ) {
+        return buildErrorResponse(
+                404,
+                "Not found",
+                ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(
+            IllegalArgumentException ex,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request.getRequestURI()
         );
     }
 
