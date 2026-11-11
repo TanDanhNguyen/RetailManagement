@@ -99,6 +99,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(DuplicateCustomerException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateCustomer(
+            DuplicateCustomerException ex) {
+
+        return buildErrorResponse(
+                409,
+                "Conflict",
+                ex.getMessage()
+        );
+    }
+
     private ResponseEntity<?> buildError(
             HttpStatus status,
             String message,
