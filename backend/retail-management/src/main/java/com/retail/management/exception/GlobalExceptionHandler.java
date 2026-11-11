@@ -121,6 +121,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InsufficientInventoryException.class)
+    public ResponseEntity<Map<String, Object>> handleInsufficientInventory(
+            InsufficientInventoryException ex
+    ) {
+        return buildErrorResponse(
+                409,
+                "Conflict",
+                ex.getMessage()
+        );
+    }
+
     private ResponseEntity<?> buildError(
             HttpStatus status,
             String message,
