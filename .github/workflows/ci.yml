@@ -72,5 +72,6 @@ jobs:
             -C -Q "IF DB_ID(N'RetailManagementDb') IS NULL CREATE DATABASE RetailManagementDb;"
 
       - name: Build and run tests
+        working-directory: backend/retail-management
         run: mvn -B clean verify
 
